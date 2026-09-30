@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>ConvertiWall.SmokeTest</AssemblyName>
+    <RootNamespace>ConvertiWall.SmokeTest</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ConvertiWall.Engine\ConvertiWall.Engine.csproj" />
+    <ProjectReference Include="..\Filetypes\Filetypes.csproj" />
+  </ItemGroup>
+</Project>

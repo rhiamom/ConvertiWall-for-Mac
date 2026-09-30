@@ -1,0 +1,76 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <AssemblyName>ConvertiWall.Engine</AssemblyName>
+    <RootNamespace>LotExpander</RootNamespace>
+    <!-- Mootilda's / Andi8104's sources predate nullable reference types and
+         implicit usings; compile them as written. -->
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <!-- Mootilda built ConvertiWall with CONVERT defined (Debug and Release);
+         her R_* handlers are shared with her other lot tools and branch on it. -->
+    <DefineConstants>$(DefineConstants);CONVERT</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Explicit manifest names: her code opens these by name. -->
+    <EmbeddedResource Update="LEStrings.resx" LogicalName="LotExpander.LEStrings.resources" />
+    <EmbeddedResource Update="PrimaryForm.resx" LogicalName="LotExpander.PrimaryForm.resources" />
+  </ItemGroup>
+
+  <!-- Mootilda's files were written on Windows in code page
+       1252 (e.g. "The Sims™ 2" in PrimaryForm.cs), which is how Visual Studio
+       read them. The macOS compiler has no code page 1252, so the build
+       converts them to UTF-8 under obj/ and compiles those copies. The files
+       in the repo stay byte-for-byte as she wrote them. -->
+  <ItemGroup>
+    <Cp1252Source Include="PrimaryForm.cs;R_WGRA.cs" />
+  </ItemGroup>
+
+  <UsingTask TaskName="ConvertCp1252ToUtf8" TaskFactory="RoslynCodeTaskFactory"
+             AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <Sources ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+      <OutputDir ParameterType="System.String" Required="true" />
+      <Converted ParameterType="Microsoft.Build.Framework.ITaskItem[]" Output="true" />
+    </ParameterGroup>
+    <Task>
+      <Using Namespace="System.IO" />
+      <Using Namespace="System.Text" />
+      <Code Type="Fragment" Language="cs"><![CDATA[
+        // Windows-1252 = Latin-1 except 0x80-0x9F.
+        const string high = "\u20AC\u0081\u201A\u0192\u201E\u2026\u2020\u2021\u02C6\u2030\u0160\u2039\u0152\u008D\u017D\u008F\u0090\u2018\u2019\u201C\u201D\u2022\u2013\u2014\u02DC\u2122\u0161\u203A\u0153\u009D\u017E\u0178";
+        Directory.CreateDirectory(OutputDir);
+        var list = new System.Collections.Generic.List<Microsoft.Build.Framework.ITaskItem>();
+        foreach (var item in Sources)
+        {
+            string src = item.GetMetadata("FullPath");
+            string dst = Path.Combine(OutputDir, Path.GetFileName(src));
+            byte[] raw = File.ReadAllBytes(src);
+            var sb = new StringBuilder(raw.Length);
+            foreach (byte b in raw)
+                sb.Append(b >= 0x80 && b < 0xA0 ? high[b - 0x80] : (char)b);
+            string text = sb.ToString();
+            if (!File.Exists(dst) || File.ReadAllText(dst, Encoding.UTF8) != text)
+                File.WriteAllText(dst, text, new UTF8Encoding(true));
+            list.Add(new Microsoft.Build.Utilities.TaskItem(dst));
+        }
+        Converted = list.ToArray();
+      ]]></Code>
+    </Task>
+  </UsingTask>
+
+  <Target Name="CompileCp1252AsUtf8" BeforeTargets="CoreCompile">
+    <ConvertCp1252ToUtf8 Sources="@(Cp1252Source)" OutputDir="$(IntermediateOutputPath)utf8">
+      <Output TaskParameter="Converted" ItemName="_Utf8Source" />
+    </ConvertCp1252ToUtf8>
+    <ItemGroup>
+      <Compile Remove="@(Cp1252Source)" />
+      <Compile Include="@(_Utf8Source)" />
+    </ItemGroup>
+  </Target>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Filetypes\Filetypes.csproj" />
+  </ItemGroup>
+</Project>
