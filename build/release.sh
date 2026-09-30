@@ -10,10 +10,10 @@
 #    - Signing identity "Developer ID Application: Catherine Gramze (AJHGU52KS3)".
 #    - notarytool keychain profile "clean-installer" (Apple ID + app-specific
 #      password stored via `xcrun notarytool store-credentials clean-installer`).
-#    - build/entitlements.plist (tracked in repo).
+#    - build/AppIcon.icns  and  build/entitlements.plist  (tracked in repo).
 #
-#  Icon: Mootilda's ConvertiWall had no <ApplicationIcon>. If build/AppIcon.icns
-#  exists it is used; otherwise the app gets the generic macOS app icon.
+#  Icon: Mootilda's ConvertiWall had no <ApplicationIcon>. build/AppIcon.icns is
+#  a new one (brick wall + "convert" badge) drawn by build/make-icon.sh.
 ###############################################################################
 set -euo pipefail
 
