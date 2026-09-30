@@ -82,7 +82,15 @@ public sealed class MainWindow : Window
         _form.Show();   // her Load and Shown handlers
         Refresh();
 
-        Closing += (_, _) => { if (!_form.IsClosed) _form.Close(); };   // her FormClosing
+        Closing += (_, _) => SaveHerSettings();
+    }
+
+    // Her FormClosing keeps the "Versioned backups" choice (a marker file).
+    // Closing the window raises it; quitting with Cmd-Q may not close the
+    // window first, so App also calls this on shutdown.
+    public void SaveHerSettings()
+    {
+        if (!_form.IsClosed) _form.Close();
     }
 
     #region Building the controls
